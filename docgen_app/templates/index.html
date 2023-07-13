@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/codemirror.css">
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/codemirror.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/mode/python/python.js"></script>
+   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.2.12/pdfobject.min.js" integrity="sha512-lDL6DD6x4foKuSTkRUKIMQJAoisDeojVPXknggl4fZWMr2/M/hMiKLs6sqUvxP/T2zXdrDMbLJ0/ru8QSZrnoQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.2.12/pdfobject.js" integrity="sha512-I6am7LdwcOMDrXQBfJ6VQiqARVrGM9desGYl3ss/NkXjuNRkLSTzcMXjzVyH6U4W2UoIOikiFV28cos/gWCdDA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf_viewer.css" integrity="sha512-CWsS97AlgjAjjwqi38kjboS8Kz0aU84/iahk4FUfjxFCeSGuyoDaQkIZvgjKZrVUDVA8Hx2Kl7JrS6rlH19z3A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.js" integrity="sha512-P/HN5l+O8ovwpe3layxRDin3RTk1kbHlnxe3KBmqqhjrVUebBE769mPVvGO5qcZGJG4uJAppkmchRMrFainTFg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js"></script>
+   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+   <style>
+      body {
+         margin: 0;
+         padding: 0;
+         font-family: Arial, sans-serif;
+         background-color: #f7f7f7;
+      }
+
+      .CodeMirror {
+            height: 100%;
+            }
+
+      .container {
+         display: flex;
+         height: 100vh;
+         max-width: 100%;
+         overflow: hidden;
+         flex-direction: column;
+      }
+
+      .title-bar {
+         background-color: #7baeed;
+         color: #ffffff;
+         padding: 10px;
+         display: flex;
+         align-items: center;
+      }
+
+      .title {
+         font-size: 24px;
+         margin: 0;
+         flex-grow: 1;
+      }
+
+      .run-button {
+         background-color: #00cc99;
+         color: #ffffff;
+         border: none;
+         padding: 8px 16px;
+         font-size: 16px;
+         cursor: pointer;
+         margin-right: 10px;
+      }
+
+      .reset-button {
+         background-color: #ff6666;
+         color: #ffffff;
+         border: none;
+         padding: 8px 16px;
+         font-size: 16px;
+         cursor: pointer;
+
+      }
+
+      .gen-button {
+         background-color: #130fde;
+         color: #ffffff;
+         border: none;
+         padding: 8px 16px;
+         font-size: 16px;
+         cursor: pointer;
+         margin-right: 10px;
+      }
+
+      .code-editor-container {
+         flex: 1;
+         display: flex;
+         flex-direction: row;
+         overflow: hidden;
+      }
+
+      .editor-pane {
+         flex: 1;
+         background-color: #7baeed;
+         padding: 10px;
+         box-sizing: border-box;
+         border: 1px solid #cccccc;
+         overflow: auto;
+      }
+
+      .result-pane {
+         flex: 1;
+         background-color: #7baeed;
+         padding: 10px;
+         box-sizing: border-box;
+         border: 1px solid #cccccc;
+         overflow: auto;
+         display: flex;
+         flex-direction: column;
+      }
+
+      .code-editor {
+         width: 100%;
+         height: 100%;
+         font-size: 14px;
+         line-height: 1.5;
+         outline: none;
+         border: none;
+         resize: none;
+      }
+
+      .pdf-page {
+         flex: 1;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         margin-bottom: 10px;
+      }
+
+      .output {
+         height: 100%;
+         color: #ff0000;
+      }
+   </style>
+   {% load static %}
+</head>
+<body>
+   <div class="container">
+      <div class="title-bar">
+         <h1 class="title">Spider's Document Generator</h1>
+         <button onclick="submitCode()" class="run-button">Run</button>
+         <button onclick="redirectToAnotherPage()" class="gen-button">Document</button>
+         <button onclick="resetCode()" class="reset-button">Reset</button>
+      </div>
+      <div class="code-editor-container">
+         <div class="editor-pane">
+            <textarea id="code-editor" class="code-editor" readonly>#Write your code here and don't change any existing code&#10;#press run to save the document and Document to Generate document&#10;from docx import Document&#10;document = Document()&#10;&#10;&#10;&#10;&#10;&#10;&#10;&#10;&#10;&#10;document.save("docgen_app/static/test.docx")
+            </textarea>
+         </div>
+         <div class="result-pane">
+            <pre id="output" class="output"></pre>
+         </div>
+      </div>
+   </div>
+   <script>
+      var editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
+         lineNumbers: true,
+         mode: "python",
+         theme: "default",
+         indentUnit: 4,
+         indentWithTabs: true,
+         autofocus: true,
+         lineWrapping: true
+      });
+   
+      function getCookie(name) {
+         var cookieValue = null;
+         if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+               var cookie = cookies[i].trim();
+               // Does this cookie string begin with the name we want?
+               if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+               }
+            }
+         }
+         return cookieValue;
+      }
+   
+      function submitCode() {
+         var code = editor.getValue();
+   
+         // Get the CSRF token from the cookie
+         var csrftoken = getCookie('csrftoken');
+   
+         // Make an AJAX POST request to send the code to the server
+         $.ajax({
+            type: "POST",
+            url: "{% url 'code_editor' %}",
+            headers: {
+               "X-CSRFToken": csrftoken
+            },
+            data: { code: code },
+            success: function(response) {
+               // Check if there are any errors
+               if (response.error) {
+                  var error = response.error;
+
+                  $(".output").text(error);
+               } else {
+                  // Access the output property of the response object
+                  var output = response.output;
+   
+                  // Display the output in the result area
+                  $(".output").text(output);
+               }
+            },
+            error: function(xhr, status, error) {
+               $(".output").text("An error occurred. Please try again.");
+            }
+         });
+      }
+   
+      function resetCode() {
+         editor.setValue('');
+         $(".output").text('');
+      }
+
+      function redirectToAnotherPage() {
+         // Generate or redirect to another HTML page
+         window.location.href = "{% url 'pdf_view' %}";
+         }
+   </script>
+</body>
+</html>
